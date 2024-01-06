@@ -12,6 +12,14 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
+  events: {
+    async linkAccount({ user }) {
+      await db.user.update({
+        where: { id: user.id },
+        data: { emailVerified: new Date() },
+      });
+    },
+  },
   callbacks: {
     async session({ token, session }) {
       if (token.sub && session.user) {
@@ -26,8 +34,10 @@ export const {
     },
     async jwt({ token }) {
       if (!token.sub) return token;
+
       const existingUser = await getUserById(token.sub);
       if (!existingUser) return token;
+
       token.role = existingUser.role;
       return token;
     },
